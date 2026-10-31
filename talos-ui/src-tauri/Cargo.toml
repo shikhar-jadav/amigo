@@ -1,0 +1,17 @@
+[package]
+name = "talos-desktop"
+version = "0.1.0"
+description = "Talos desktop test shell"
+authors = ["Talos"]
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+url = "2"
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]

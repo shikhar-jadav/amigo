@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "talos-backend"
+version = "0.1.0"
+description = "Protocol-first Amigo gateway and agent runtime, built on Talos"
+requires-python = ">=3.12"
+readme = "README.md"
+license = "PolyForm-Noncommercial-1.0.0"
+license-files = ["LICENSE"]
+dependencies = ["fastapi>=0.110", "uvicorn>=0.27", "websockets>=13", "pydantic>=2.6", "langgraph>=0.2", "jsonschema>=4.20", "cryptography>=42", "json5>=0.9", "python-multipart>=0.0.9", "tzdata>=2024.1"]
+
+[project.scripts]
+talos = "talos_backend.cli:main"
+amigo = "talos_backend.cli:main"
+amigohub = "talos_backend.hub_cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
