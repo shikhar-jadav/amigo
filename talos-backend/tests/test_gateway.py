@@ -262,18 +262,16 @@ def test_a2a_cancel_marks_active_task_canceled(tmp_path, monkeypatch):
 
 
 def test_gateway_requires_connect_and_supports_agent_lifecycle(tmp_path, monkeypatch):
+    from starlette.websockets import WebSocketDisconnect
+
     monkeypatch.setenv("TALOS_GATEWAY_TOKEN", "test-secret")
     app = create_app(tmp_path)
     with TestClient(app) as client:
         with client.websocket_connect("/gateway") as ws:
             ws.receive_json()  # server challenge; an invalid first client frame still closes
             ws.send_json({"type": "req", "id": "x", "method": "health"})
-            # A non-connect first frame is rejected by closing the socket.
-            try:
+            with pytest.raises(WebSocketDisconnect):
                 ws.receive_json()
-                raise AssertionError("gateway accepted a request before connect")
-            except Exception:
-                pass
 
         with client.websocket_connect("/gateway") as ws:
             challenge = ws.receive_json()["payload"]["nonce"]
@@ -288,6 +286,22 @@ def test_gateway_requires_connect_and_supports_agent_lifecycle(tmp_path, monkeyp
             ws.send_json({"type": "req", "id": "w1", "method": "agent.wait", "params": {"runId": run_id}})
             completed = ws.receive_json()
             assert completed["payload"]["status"] == "ok"
+
+
+def test_gateway_rejects_unsupported_protocol_version(tmp_path, monkeypatch):
+    from starlette.websockets import WebSocketDisconnect
+
+    monkeypatch.setenv("TALOS_GATEWAY_TOKEN", "test-secret")
+    app = create_app(tmp_path)
+    with TestClient(app) as client:
+        with client.websocket_connect("/gateway") as ws:
+            challenge = ws.receive_json()["payload"]["nonce"]
+            ws.send_json({"type": "connect", "protocolVersion": 2, "role": "operator", "token": "test-secret", "nonce": challenge})
+            rejected = ws.receive_json()
+            assert rejected["ok"] is False
+            assert rejected["error"]["code"] == "protocol_version"
+            with pytest.raises(WebSocketDisconnect):
+                ws.receive_json()
 
 
 def test_idempotency_deduplicates_agent_start(tmp_path, monkeypatch):

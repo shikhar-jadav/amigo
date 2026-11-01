@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: talos-ui/package-lock.json
+      - run: python -m pip install ./talos-backend pytest
+      - run: python -m pytest talos-backend/tests -q
+      - run: npm ci --prefix talos-ui
+      - run: npm run protocol:check --prefix talos-ui
+      - run: npm run typecheck --prefix talos-ui
+      - run: npm run lint --prefix talos-ui
